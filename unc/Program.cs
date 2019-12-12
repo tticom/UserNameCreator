@@ -46,45 +46,39 @@ namespace unc
 
         public static string CalculateUserName(String firstName, String lastName, String dob, String salt, bool verbose = false)
         {
-            var sha256Hash = ComputeSha256Hash(firstName + lastName + dob + salt, verbose);
-            var ripemdHash = ComputeRipeMdHash(sha256Hash, verbose);
-            var crc32 = ComputeCrc32(ripemdHash, verbose);
-            return firstName + lastName + crc32;
+            var sha256Hash = ComputeSha256Hash(Encoding.UTF8.GetBytes(firstName + lastName + dob + salt));
+            if (verbose) Console.WriteLine("SHA256: " + byteArrayToString(sha256Hash));
+            var ripemdHash = ComputeRipeMdHash(sha256Hash);
+            if (verbose) Console.WriteLine("RIPEMD 160: " + byteArrayToString(ripemdHash));
+            var crc32 = ComputeCrc32(ripemdHash);
+            if (verbose) Console.WriteLine("CRC32: " + byteArrayToString(crc32));
+            return firstName + lastName + byteArrayToString(crc32);
         }
-        private static string ComputeSha256Hash(string data, bool verbose)
+        private static byte[] ComputeSha256Hash(byte[] data)
         {
             // Create a SHA256   
             using (SHA256 sha256Hash = SHA256.Create())
             {
-                var bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(data));
-                var computedSha256Hash = byteArrayToString(bytes);
-                if(verbose) Console.WriteLine("SHA256: " + computedSha256Hash);
-                return computedSha256Hash;
+                return sha256Hash.ComputeHash(data);
             }
         }
 
-        private static string ComputeRipeMdHash(string data, bool verbose)
+        private static byte[] ComputeRipeMdHash(byte[] data)
         {
             using (RIPEMD160 ripemd160 = RIPEMD160Managed.Create())
             {
-                var bytes = ripemd160.ComputeHash(Encoding.UTF8.GetBytes(data));
-                var computedRipeMdHash = byteArrayToString(bytes);
-                if (verbose) Console.WriteLine("RIPEMD 160: " + computedRipeMdHash);
-                return computedRipeMdHash;
+                return ripemd160.ComputeHash(data);
             }
         }
 
-        private static string ComputeCrc32(string data, bool verbose)
+        private static byte[] ComputeCrc32(byte[] data)
         {
             using (var crc32 = new Crc32())
             {
-                var bytes = crc32.ComputeHash(Encoding.UTF8.GetBytes(data));
-                var computedCrc32 = byteArrayToString(bytes);
-                if (verbose) Console.WriteLine("CRC32: " + computedCrc32);
-                return computedCrc32;
+                return crc32.ComputeHash(data);
             }
         }
-
+        
         private static string byteArrayToString(byte[] bytes)
         {
             var builder = new StringBuilder();
